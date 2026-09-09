@@ -1,0 +1,36 @@
+﻿@using PrescribingSystem.Models.Viewmodel
+@model DashboardViewModel
+
+<h2>Operations Dashboard</h2>
+
+<div>
+    <h4>Total Load: @Model.TotalLoad</h4>
+    <h4>Total Discharge: @Model.TotalDischarge</h4>
+</div>
+
+<canvas id="opsChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    var ctx = document.getElementById('opsChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(Json.Serialize(Model.Dates)),
+            datasets: [
+                {
+                    label: 'Load',
+                    data: @Html.Raw(Json.Serialize(Model.LoadCounts)),
+                    backgroundColor: 'green'
+                },
+                {
+                    label: 'Discharge',
+                    data: @Html.Raw(Json.Serialize(Model.DischargeCounts)),
+                    backgroundColor: 'red'
+                }
+            ]
+        }
+    });
+</script>

@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TransnetSystem</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- Global clear theme -->
+    <link rel="stylesheet" href="~/css/createVessel.css" asp-append-version="true" />
+
+    <!-- Auto-generated styles -->
+    <link rel="stylesheet" href="~/PrescribingSystem.styles.css" asp-append-version="true" />
+
+    <!-- Page-specific CSS -->
+    @RenderSection("Styles", required: false)
+</head>
+
+<body class="bg-light">
+
+    <!-- NAVBAR -->
+    <header>
+       @*  <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom shadow-sm mb-4">
+            <div class="container-fluid">
+
+                <a class="navbar-brand fw-semibold text-primary"
+                   asp-controller="Home" asp-action="Index">
+                    <img src="~/css/WhatsApp Image 2025-07-07 at 13.00.09.jpeg"
+                         class="me-2"
+                         style="height:40px;" />
+                    Prescribing System
+                </a>
+
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link text-secondary"
+                               asp-controller="Home" asp-action="Index">
+                                Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-secondary"
+                               asp-controller="Home" asp-action="Privacy">
+                                Privacy
+                            </a>
+                        </li>
+                    </ul>
+
+                   <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav> *@
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div class="container">
+        <main role="main" class="pb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    @RenderBody()
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

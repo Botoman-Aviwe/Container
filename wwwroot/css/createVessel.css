@@ -1,0 +1,50 @@
+/* Page background */
+body {
+    background: linear-gradient(to bottom, #e0f0ff, #ffffff); /* soft blue to white gradient */
+}
+
+/* Card container */
+.card {
+    background-color: #ffffff; /* keep card white for contrast */
+    border-radius: 6px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Headings */
+h3, h5 {
+    color: #1a3f7c; /* deep blue */
+    font-weight: 600;
+}
+
+/* Table clean look */
+.table {
+    background-color: #ffffff;
+}
+
+    .table thead th {
+        background-color: #1a3f7c; /* deep blue */
+        color: #ffffff; /* white text */
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+    }
+
+/* Form inputs spacing */
+.form-control {
+    border-radius: 4px;
+    border: 1px solid #1a3f7c; /* subtle blue border */
+}
+
+/* Buttons */
+.btn {
+    border-radius: 4px;
+    background-color: #1a3f7c; /* deep blue button */
+    color: #ffffff;
+    border: none;
+}
+
+    .btn:hover {
+        background-color: #1451a2; /* slightly darker blue on hover */
+    }

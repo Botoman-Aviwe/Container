@@ -1,0 +1,21 @@
+﻿@model dynamic
+
+<h2>Load Reports</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Location</th>
+            <th>Total Containers</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Location</td>
+                <td>@item.Count</td>
+            </tr>
+        }
+    </tbody>
+</table>

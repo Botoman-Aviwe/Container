@@ -1,0 +1,26 @@
+﻿@model List<COPIED>
+
+<form method="get">
+    <input type="text" name="search" placeholder="Search container..." />
+    <button type="submit">Search</button>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Container</th>
+            <th>From</th>
+            <th>To</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Container</td>
+                <td>@item.FromLocation</td>
+                <td>@item.ToLocation</td>
+            </tr>
+        }
+    </tbody>
+</table>

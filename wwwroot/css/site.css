@@ -1,0 +1,45 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+/*body {
+    background-image: url('WhatsApp Image 2025-07-07 at 13.00.09.jpeg');
+    margin-bottom: 60px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}*/
+body {
+    background-image: url('original-bec23d5714fc66c06f0710e372eb39f0.gif');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover; /* Ensures the image covers the entire body */
+    background-attachment: fixed; /* Optional: keeps background fixed while scrolling */
+    background-color: #f4f4f4; /* Fallback color in case image doesn't load */
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Ensures the body takes full height of the viewport */
+}
+
+
+
+.img-fluid {
+    margin-left:0px;
+    width: 100px;
+    height: 45px;
+}

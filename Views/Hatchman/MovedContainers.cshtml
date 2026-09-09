@@ -1,0 +1,506 @@
+﻿@model List<MovedContainer>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Moved Containers";
+}
+
+<div class="container-fluid px-4">
+    <!-- Page Header with Stats -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="bi bi-arrow-left-right"></i> Moved Containers
+            </h2>
+            <p class="text-muted mt-2">Track all container movements between locations</p>
+        </div>
+        <div class="mt-2 mt-sm-0">
+            <a asp-action="CargoView" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-return-left"></i> Back to Load Containers
+            </a>
+            <button id="exportCsvBtn" class="btn btn-success">
+                <i class="bi bi-file-spreadsheet"></i> Export CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & Search Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="searchInput" class="form-label fw-semibold">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Container #, From/To location...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFrom" class="form-label fw-semibold">Moved from</label>
+                    <input type="date" id="dateFrom" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="dateTo" class="form-label fw-semibold">Moved to</label>
+                    <input type="date" id="dateTo" class="form-control">
+                </div>
+                <div class="col-md-1">
+                    <button id="resetFiltersBtn" class="btn btn-outline-secondary w-100" title="Reset filters">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary p-2">Total moved: <span id="totalCount">@Model.Count</span></span>
+                    <span class="badge bg-secondary p-2 ms-2">Shown: <span id="filteredCount">@Model.Count</span></span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 me-1">Rows per page:</label>
+                    <select id="pageSizeSelect" class="form-select form-select-sm w-auto">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Moved Containers Table -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered mb-0" id="movedTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="sortable" data-sort="seq">
+                            Seq <i class="bi bi-arrow-down-up"></i>
+                        </th>
+
+                        <th class="sortable" data-sort="container">
+                            Container <i class="bi bi-arrow-down-up"></i>
+                        </th>
+
+                        <th class="sortable" data-sort="from">
+                            From <i class="bi bi-arrow-down-up"></i>
+                        </th>
+
+                        <th class="sortable" data-sort="to">
+                            To <i class="bi bi-arrow-down-up"></i>
+                        </th>
+
+                        <th class="sortable" data-sort="date">
+                            Moved Date <i class="bi bi-arrow-down-up"></i>
+                        </th>
+
+                        <th>
+                            Received
+                        </th>
+
+                        <th>
+                            Action
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr id="noDataRow">
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-1"></i><br />No moved containers yet
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr data-id="@item.Id"
+                                data-seq="@item.Sequence"
+                                data-container="@item.Container"
+                                data-from="@item.FromLocation"
+                                data-to="@item.ToLocation"
+                                data-date="@item.CreatedDate.ToString("yyyy-MM-dd")">
+
+                                <td>
+                                    @item.Sequence
+                                </td>
+
+                                <td>
+                                    <strong>@item.Container</strong>
+                                </td>
+
+                                <td>
+                                    <i class="bi bi-box-arrow-right text-primary me-1"></i>
+                                    @item.FromLocation
+                                </td>
+
+                                <td>
+                                    <i class="bi bi-box-arrow-in-right text-success me-1"></i>
+                                    @item.ToLocation
+                                </td>
+
+                                <td>
+                                    @item.CreatedDate.ToString("yyyy-MM-dd HH:mm")
+                                </td>
+
+                                <td>
+                                    @if (item.ReceivedDate.HasValue)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            @item.ReceivedDate.Value.ToString("yyyy-MM-dd HH:mm")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock me-1"></i>
+                                            Not Received
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (item.ReceivedDate.HasValue)
+                                    {
+                                        <button class="btn btn-sm btn-success" disabled>
+                                            <i class="bi bi-check-circle"></i>
+                                            Received
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="MarkContainerReceived"
+                                              method="post"
+                                              class="d-inline">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@item.Id" />
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-primary"
+                                                    onclick="return confirm('Mark container @item.Container as received?');">
+
+                                                <i class="bi bi-box-arrow-in-down"></i>
+                                                Mark Received
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <span id="paginationInfo" class="small text-muted"></span>
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function() {
+            // Get all data rows (skip the "no data" placeholder if exists)
+            const tableBody = document.querySelector("#movedTable tbody");
+            let allRows = [];
+            let currentPage = 1;
+            let pageSize = 25;
+            let currentSort = { column: "date", direction: "desc" }; // default newest first
+            let filters = {
+                search: "",
+                dateFrom: "",
+                dateTo: ""
+            };
+
+            // Initialise rows array (store DOM elements and their data)
+            function initRows() {
+                const rows = document.querySelectorAll("#movedTable tbody tr");
+                if (rows.length === 1 && rows[0].id === "noDataRow") {
+                    allRows = [];
+                    return;
+                }
+                allRows = Array.from(rows).map(row => {
+                    return {
+                        element: row,
+                        seq: parseInt(row.getAttribute("data-seq")),
+                        container: (row.getAttribute("data-container") || "").toLowerCase(),
+                        from: (row.getAttribute("data-from") || "").toLowerCase(),
+                        to: (row.getAttribute("data-to") || "").toLowerCase(),
+                        dateStr: row.getAttribute("data-date"),
+                        dateObj: new Date(row.getAttribute("data-date"))
+                    };
+                });
+            }
+
+            // Filter rows based on search and date range
+            function filterRows() {
+                let filtered = [...allRows];
+                const searchTerm = filters.search.trim().toLowerCase();
+                if (searchTerm !== "") {
+                    filtered = filtered.filter(row =>
+                        row.container.includes(searchTerm) ||
+                        row.from.includes(searchTerm) ||
+                        row.to.includes(searchTerm)
+                    );
+                }
+                if (filters.dateFrom) {
+                    const fromDate = new Date(filters.dateFrom);
+                    fromDate.setHours(0,0,0,0);
+                    filtered = filtered.filter(row => row.dateObj >= fromDate);
+                }
+                if (filters.dateTo) {
+                    const toDate = new Date(filters.dateTo);
+                    toDate.setHours(23,59,59,999);
+                    filtered = filtered.filter(row => row.dateObj <= toDate);
+                }
+                document.getElementById("filteredCount").innerText = filtered.length;
+                return filtered;
+            }
+
+            // Sort filtered rows
+            function sortRows(rows) {
+                const col = currentSort.column;
+                const dir = currentSort.direction;
+                return rows.sort((a,b) => {
+                    let valA, valB;
+                    if (col === "seq") { valA = a.seq; valB = b.seq; }
+                    else if (col === "container") { valA = a.container; valB = b.container; }
+                    else if (col === "from") { valA = a.from; valB = b.from; }
+                    else if (col === "to") { valA = a.to; valB = b.to; }
+                    else { valA = a.dateObj; valB = b.dateObj; }
+                    if (valA < valB) return dir === "asc" ? -1 : 1;
+                    if (valA > valB) return dir === "asc" ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            // Paginate and render current page
+            function renderTable() {
+                let filtered = filterRows();
+                filtered = sortRows(filtered);
+                const totalFiltered = filtered.length;
+                const totalPages = Math.ceil(totalFiltered / pageSize);
+                if (currentPage > totalPages) currentPage = totalPages || 1;
+                const start = (currentPage - 1) * pageSize;
+                const end = start + pageSize;
+                const pageRows = filtered.slice(start, end);
+
+                // Hide all rows first
+                allRows.forEach(row => row.element.style.display = "none");
+                // Show only rows for current page
+                pageRows.forEach(row => row.element.style.display = "");
+                // If no rows after filtering, show "no data" message
+                let noDataRow = document.getElementById("noDataRow");
+                if (totalFiltered === 0 && !noDataRow) {
+                    const tbody = tableBody;
+                    const emptyMsg = document.createElement("tr");
+                    emptyMsg.id = "noDataRow";
+                    emptyMsg.innerHTML = `<td colspan="5" class="text-center text-muted py-5"><i class="bi bi-inbox fs-1"></i><br />No matching moved containers</td>`;
+                    tbody.appendChild(emptyMsg);
+                } else if (totalFiltered > 0 && noDataRow) {
+                    noDataRow.remove();
+                } else if (totalFiltered === 0 && noDataRow) {
+                    // keep it
+                }
+
+                // Update pagination controls
+                updatePaginationControls(currentPage, totalPages, totalFiltered);
+                document.getElementById("paginationInfo").innerHTML = `Showing ${start+1} to ${Math.min(end, totalFiltered)} of ${totalFiltered} moved containers`;
+            }
+
+            function updatePaginationControls(current, total, totalItems) {
+                const paginationUl = document.getElementById("pagination");
+                paginationUl.innerHTML = "";
+                if (total <= 1 && totalItems === 0) return;
+
+                // Previous button
+                const prevLi = document.createElement("li");
+                prevLi.className = `page-item ${current === 1 ? "disabled" : ""}`;
+                prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>`;
+                prevLi.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    if (current > 1) {
+                        currentPage--;
+                        renderTable();
+                    }
+                });
+                paginationUl.appendChild(prevLi);
+
+                // Page numbers
+                let startPage = Math.max(1, current - 2);
+                let endPage = Math.min(total, current + 2);
+                if (endPage - startPage < 4) {
+                    if (startPage === 1) endPage = Math.min(total, startPage + 4);
+                    else if (endPage === total) startPage = Math.max(1, endPage - 4);
+                }
+                for (let i = startPage; i <= endPage; i++) {
+                    const pageLi = document.createElement("li");
+                    pageLi.className = `page-item ${i === current ? "active" : ""}`;
+                    pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                    pageLi.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        currentPage = i;
+                        renderTable();
+                    });
+                    paginationUl.appendChild(pageLi);
+                }
+
+                // Next button
+                const nextLi = document.createElement("li");
+                nextLi.className = `page-item ${current === total ? "disabled" : ""}`;
+                nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>`;
+                nextLi.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    if (current < total) {
+                        currentPage++;
+                        renderTable();
+                    }
+                });
+                paginationUl.appendChild(nextLi);
+            }
+
+            // Event listeners for filters
+            const searchInput = document.getElementById("searchInput");
+            const dateFrom = document.getElementById("dateFrom");
+            const dateTo = document.getElementById("dateTo");
+            const resetBtn = document.getElementById("resetFiltersBtn");
+
+            function applyFilters() {
+                filters.search = searchInput.value;
+                filters.dateFrom = dateFrom.value;
+                filters.dateTo = dateTo.value;
+                currentPage = 1;
+                renderTable();
+            }
+
+            searchInput.addEventListener("input", applyFilters);
+            dateFrom.addEventListener("change", applyFilters);
+            dateTo.addEventListener("change", applyFilters);
+            resetBtn.addEventListener("click", () => {
+                searchInput.value = "";
+                dateFrom.value = "";
+                dateTo.value = "";
+                applyFilters();
+            });
+
+            // Page size change
+            const pageSizeSelect = document.getElementById("pageSizeSelect");
+            pageSizeSelect.addEventListener("change", (e) => {
+                pageSize = parseInt(e.target.value);
+                currentPage = 1;
+                renderTable();
+            });
+
+            // Sorting logic
+            const sortableHeaders = document.querySelectorAll(".sortable");
+            sortableHeaders.forEach(header => {
+                header.style.cursor = "pointer";
+                header.addEventListener("click", () => {
+                    const sortKey = header.getAttribute("data-sort");
+                    if (currentSort.column === sortKey) {
+                        currentSort.direction = currentSort.direction === "asc" ? "desc" : "asc";
+                    } else {
+                        currentSort.column = sortKey;
+                        currentSort.direction = "asc";
+                    }
+                    // Update header icons visual feedback (simple)
+                    sortableHeaders.forEach(h => {
+                        h.querySelector("i").className = "bi bi-arrow-down-up";
+                    });
+                    const icon = header.querySelector("i");
+                    icon.className = currentSort.direction === "asc" ? "bi bi-arrow-up" : "bi bi-arrow-down";
+                    currentPage = 1;
+                    renderTable();
+                });
+            });
+
+            // Export to CSV
+            const exportBtn = document.getElementById("exportCsvBtn");
+            exportBtn.addEventListener("click", () => {
+                let filtered = filterRows();
+                filtered = sortRows(filtered);
+                if (filtered.length === 0) {
+                    alert("No data to export.");
+                    return;
+                }
+                const csvRows = [];
+                // Header
+                csvRows.push(["Seq", "Container", "From", "To", "Moved Date"].join(","));
+                // Data rows
+                filtered.forEach(row => {
+                    const seq = row.seq;
+                    const container = `"${row.element.children[1].innerText.replace(/"/g, '""')}"`; // escape quotes
+                    const fromLoc = `"${row.element.children[2].innerText.replace(/"/g, '""')}"`;
+                    const toLoc = `"${row.element.children[3].innerText.replace(/"/g, '""')}"`;
+                    const movedDate = `"${row.element.children[4].innerText}"`;
+                    csvRows.push([seq, container, fromLoc, toLoc, movedDate].join(","));
+                });
+                const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.href = url;
+                link.setAttribute("download", "moved_containers.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            });
+
+            // Initialization
+            initRows();
+            if (allRows.length > 0) {
+                // Apply default sorting (date desc) and render
+                currentSort = { column: "date", direction: "desc" };
+                renderTable();
+                // update the sorting icon on Date column
+                const dateHeader = document.querySelector(".sortable[data-sort='date'] i");
+                if (dateHeader) dateHeader.className = "bi bi-arrow-down";
+            } else {
+                document.getElementById("totalCount").innerText = "0";
+                document.getElementById("filteredCount").innerText = "0";
+            }
+        })();
+    </script>
+}
+
+<!-- Additional style for better interaction -->
+<style>
+    .sortable {
+        user-select: none;
+        transition: background-color 0.2s;
+    }
+
+        .sortable:hover {
+            background-color: #3a4a5e !important;
+        }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+        transition: 0.1s;
+    }
+
+    .btn-outline-secondary:hover i, .btn-outline-secondary:focus i {
+        transform: scale(1.05);
+    }
+
+    .card {
+        border: none;
+    }
+
+    .input-group-text {
+        background-color: #fff;
+    }
+</style>
