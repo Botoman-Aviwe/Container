@@ -1,0 +1,1243 @@
+﻿@model List<PrescribingSystem.Models.MovedContainer>
+
+@using Microsoft.AspNetCore.Identity
+@using PrescribingSystem.Data
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    ViewData["Title"] = "Hatchman Dashboard";
+
+    ApplicationUser appUser = null;
+    string fullName = "Guest User";
+    string roleName = "";
+    string initials = "GU";
+
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        appUser = await UserManager.GetUserAsync(User);
+
+        if (appUser != null)
+        {
+            fullName = $"{appUser.FirstName} {appUser.LastName}".Trim();
+            roleName = (await UserManager.GetRolesAsync(appUser))
+                .FirstOrDefault() ?? "User";
+
+            var firstName = appUser.FirstName ?? "";
+            var lastName = appUser.LastName ?? "";
+
+            if (!string.IsNullOrWhiteSpace(firstName) &&
+                !string.IsNullOrWhiteSpace(lastName))
+            {
+                initials = $"{firstName[0]}{lastName[0]}".ToUpper();
+            }
+            else if (!string.IsNullOrWhiteSpace(firstName))
+            {
+                initials = firstName.Substring(0, 1).ToUpper();
+            }
+        }
+    }
+
+    var containers = Model ??
+        new List<PrescribingSystem.Models.MovedContainer>();
+
+    var totalContainers = containers.Count;
+
+    var receivedContainers = containers
+        .Where(x => x.ReceivedDate.HasValue)
+        .ToList();
+
+    var pendingContainers = totalContainers - receivedContainers.Count;
+
+    var fast = Convert.ToInt32(ViewBag.Fast ?? 0);
+    var medium = Convert.ToInt32(ViewBag.Medium ?? 0);
+    var slow = Convert.ToInt32(ViewBag.Slow ?? 0);
+    var averageHours = Convert.ToDouble(ViewBag.AverageHours ?? 0);
+
+    var receivedPercentage = totalContainers > 0
+        ? Math.Round((double)receivedContainers.Count /
+                     totalContainers * 100, 1)
+        : 0;
+
+    var receivedCount = receivedContainers.Count;
+
+    var fastPercentage = receivedCount > 0
+        ? Math.Min(100, Math.Max(0, (double)fast / receivedCount * 100))
+        : 0;
+
+    var mediumPercentage = receivedCount > 0
+        ? Math.Min(100, Math.Max(0, (double)medium / receivedCount * 100))
+        : 0;
+
+    var slowPercentage = receivedCount > 0
+        ? Math.Min(100, Math.Max(0, (double)slow / receivedCount * 100))
+        : 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>@ViewData["Title"] - Transnet Hatchman System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+
+    <style>
+        :root {
+            --transnet-blue: #003b71;
+            --transnet-dark: #00264d;
+            --transnet-yellow: #f5c400;
+            --bg: #f6f8fc;
+            --text: #243447;
+            --muted: #64748b;
+            --border: #e8edf4;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, #003b71, #00264d);
+            color: white;
+            overflow-y: auto;
+            z-index: 1050;
+            transition: left .3s ease;
+        }
+
+        .sidebar-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255,255,255,.12);
+        }
+
+            .sidebar-header h4 {
+                margin: 0;
+                font-weight: 800;
+            }
+
+            .sidebar-header small {
+                opacity: .8;
+            }
+
+        .menu-links {
+            padding: 20px 0;
+            list-style: none;
+            margin: 0;
+        }
+
+            .menu-links li {
+                margin: 4px 12px;
+            }
+
+            .menu-links a {
+                color: white;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                padding: 12px 15px;
+                border-radius: 12px;
+                transition: background .2s ease;
+            }
+
+                .menu-links a:hover,
+                .menu-links a.active {
+                    background: rgba(255,255,255,.14);
+                }
+
+            .menu-links i {
+                margin-right: 12px;
+                font-size: 21px;
+            }
+
+        /* MAIN LAYOUT */
+
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        .header-bar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: white;
+            padding: 16px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 1px 12px rgba(0,0,0,.06);
+        }
+
+        .page-title h4 {
+            margin: 0;
+            color: var(--transnet-dark);
+            font-weight: 750;
+        }
+
+        .user-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: var(--transnet-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .content-wrapper {
+            padding: 25px;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--transnet-dark);
+            font-size: 28px;
+            padding: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
+        }
+
+        /* DASHBOARD WELCOME */
+
+        .hero-banner {
+            background: linear-gradient(120deg, #003b71, #00549b);
+            color: white;
+            border-radius: 18px;
+            padding: 32px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .hero-title {
+            font-size: clamp(1.7rem, 3vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .hero-text {
+            font-size: 1.02rem;
+            line-height: 1.7;
+            opacity: .95;
+            max-width: 650px;
+        }
+
+        .hero-image {
+            max-height: 240px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        /* KPI CARDS */
+
+        .stat-card {
+            height: 100%;
+            background: white;
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+        }
+
+        .stat-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 23px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            line-height: 1.2;
+            font-weight: 800;
+            color: var(--transnet-dark);
+            margin-bottom: 7px;
+        }
+
+        .stat-note {
+            color: var(--muted);
+            font-size: .82rem;
+        }
+
+        /* PANELS */
+
+        .panel {
+            height: 100%;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.04);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px 22px;
+            border-bottom: 1px solid #edf0f5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+            .panel-header h5 {
+                margin: 0;
+                font-weight: 750;
+                color: var(--transnet-dark);
+            }
+
+        .performance-row {
+            margin-bottom: 22px;
+        }
+
+            .performance-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .performance-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 9px;
+            font-size: .9rem;
+        }
+
+        .progress {
+            height: 9px;
+            border-radius: 20px;
+            background: #edf1f6;
+        }
+
+        .progress-bar {
+            border-radius: 20px;
+        }
+
+        /* QUICK LINKS */
+
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text);
+            transition: .2s ease;
+            height: 100%;
+        }
+
+            .quick-link:hover {
+                border-color: var(--transnet-blue);
+                background: #f5f9ff;
+                transform: translateY(-2px);
+            }
+
+        .quick-icon {
+            min-width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #e8f1fb;
+            color: var(--transnet-blue);
+            font-size: 23px;
+        }
+
+        .quick-link strong {
+            display: block;
+            color: var(--transnet-dark);
+            margin-bottom: 3px;
+        }
+
+        .quick-link small {
+            color: var(--muted);
+        }
+
+        /* MOVEMENT TABLE */
+
+        .movement-table {
+            margin-bottom: 0;
+        }
+
+            .movement-table thead th {
+                background: #f5f8fc;
+                color: #526176;
+                font-size: .76rem;
+                text-transform: uppercase;
+                letter-spacing: .035em;
+                white-space: nowrap;
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .movement-table tbody td {
+                padding: 14px 16px;
+                vertical-align: middle;
+                font-size: .88rem;
+            }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-received {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+            .empty-state i {
+                font-size: 45px;
+                color: #9aabc0;
+            }
+
+        .dashboard-footer {
+            color: var(--muted);
+            font-size: .8rem;
+            text-align: right;
+            padding: 18px 0 5px;
+        }
+
+        /* RESPONSIVE */
+
+        @@media (max-width: 992px) {
+            .sidebar {
+                left: -280px;
+            }
+
+                .sidebar.active {
+                    left: 0;
+                }
+
+            .sidebar-overlay.active {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,.4);
+                z-index: 1040;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .header-bar {
+                padding: 14px 20px;
+            }
+
+            .content-wrapper {
+                padding: 18px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .header-bar {
+                padding: 12px;
+            }
+
+            .content-wrapper {
+                padding: 12px;
+            }
+
+            .user-box {
+                gap: 7px;
+            }
+
+            .user-details {
+                max-width: 125px;
+                overflow-wrap: anywhere;
+                font-size: .85rem;
+            }
+
+            .avatar {
+                width: 38px;
+                height: 38px;
+            }
+
+            .hero-banner {
+                padding: 22px;
+            }
+
+            .stat-card {
+                padding: 17px;
+            }
+
+            .stat-value {
+                font-size: 1.7rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+
+        <div class="sidebar-header">
+            <h4>
+                <i class="bx bx-anchor"></i>
+                Transnet
+            </h4>
+            <small>Hatchman Operations MIS</small>
+        </div>
+
+        <ul class="menu-links">
+
+            <li>
+                <a asp-controller="Hatchman"
+                   asp-action="Index"
+                   class="active">
+                    <i class="bx bx-home"></i>
+                    Dashboard
+                </a>
+            </li>
+
+            <li>
+                <a asp-controller="Hatchman"
+                   asp-action="MovedContainers">
+                    <i class="bx bx-transfer-alt"></i>
+                    Container Movements
+                </a>
+            </li>
+
+            <li>
+                <a asp-controller="CargoCoordinator"
+                   asp-action="ManageContainers">
+                    <i class="bx bx-package"></i>
+                    Containers
+                </a>
+            </li>
+
+            <li>
+                <a asp-controller="CargoCoordinator"
+                   asp-action="ShipmentTracking">
+                    <i class="bx bx-map"></i>
+                    Tracking
+                </a>
+            </li>
+
+            <li>
+                <a asp-controller="CargoCoordinator"
+                   asp-action="Reports">
+                    <i class="bx bx-bar-chart-alt"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li>
+                <a asp-controller="Home"
+                   asp-action="Settings">
+                    <i class="bx bx-cog"></i>
+                    Settings
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <!-- HEADER -->
+        <header class="header-bar">
+
+            <div class="d-flex align-items-center gap-3">
+
+                <button type="button"
+                        class="sidebar-toggle"
+                        id="sidebarToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="sidebar"
+                        aria-expanded="false">
+                    <i class="bx bx-menu"></i>
+                </button>
+
+                <div class="page-title">
+                    <h4>@ViewData["Title"]</h4>
+                </div>
+
+            </div>
+
+            <div class="user-box">
+
+                <div class="user-details text-end">
+                    <div class="fw-bold">@fullName</div>
+                    <small class="text-muted">@roleName</small>
+                </div>
+
+                <div class="avatar"
+                     title="@fullName"
+                     aria-label="User initials @initials">
+                    @initials
+                </div>
+
+            </div>
+
+        </header>
+
+        <main class="content-wrapper">
+
+            <!-- WELCOME BANNER -->
+            <section class="hero-banner">
+
+                <div class="row align-items-center g-4">
+
+                    <div class="col-lg-8">
+
+                        <span class="badge bg-warning text-dark mb-3">
+                            TRANSNET PORT OPERATIONS
+                        </span>
+
+                        <h1 class="hero-title">
+                            Hatchman Operations Dashboard
+                        </h1>
+
+                        <p class="hero-text">
+                            Manage container receipts, monitor yard movements,
+                            verify destination arrivals and maintain operational
+                            visibility across the terminal.
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+
+                            <a asp-controller="Hatchman"
+                               asp-action="MovedContainers"
+                               class="btn btn-warning btn-lg fw-semibold">
+                                <i class="bx bx-package"></i>
+                                View Container Movements
+                            </a>
+
+                            <a href="#recentMovements"
+                               class="btn btn-outline-light btn-lg">
+                                <i class="bx bx-list-ul"></i>
+                                Recent Activity
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-4 text-center">
+                        <img src="~/images/Transnet Dockworker at Container Terminal.png"
+                             class="img-fluid hero-image"
+                             alt="Transnet Hatchman" />
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- KPI CARDS -->
+            <section class="row g-3 mb-4">
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="stat-card">
+
+                        <div class="stat-heading">
+                            <span>Total Movements</span>
+                            <span class="stat-icon"
+                                  style="background:#e8f1fb;color:#003b71">
+                                <i class="bx bx-transfer-alt"></i>
+                            </span>
+                        </div>
+
+                        <div class="stat-value">@totalContainers</div>
+
+                        <div class="stat-note">
+                            All recorded container movements
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="stat-card">
+
+                        <div class="stat-heading">
+                            <span>Received Containers</span>
+                            <span class="stat-icon"
+                                  style="background:#dcfce7;color:#15803d">
+                                <i class="bx bx-check-circle"></i>
+                            </span>
+                        </div>
+
+                        <div class="stat-value">@receivedCount</div>
+
+                        <div class="stat-note">
+                            @receivedPercentage% of all movements
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="stat-card">
+
+                        <div class="stat-heading">
+                            <span>Pending Receipts</span>
+                            <span class="stat-icon"
+                                  style="background:#fff3cd;color:#b58105">
+                                <i class="bx bx-time-five"></i>
+                            </span>
+                        </div>
+
+                        <div class="stat-value">@pendingContainers</div>
+
+                        <div class="stat-note">
+                            Awaiting recorded receipt
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="stat-card">
+
+                        <div class="stat-heading">
+                            <span>Average Receipt Time</span>
+                            <span class="stat-icon"
+                                  style="background:#f0eaff;color:#6f42c1">
+                                <i class="bx bx-stopwatch"></i>
+                            </span>
+                        </div>
+
+                        <div class="stat-value">
+                            @averageHours.ToString("N2")
+                        </div>
+
+                        <div class="stat-note">
+                            Hours per received container
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- PERFORMANCE AND SUMMARY -->
+            <section class="row g-3 mb-4">
+
+                <div class="col-lg-7">
+                    <div class="panel">
+
+                        <div class="panel-header">
+                            <div>
+                                <h5>Receipt Turnaround Performance</h5>
+                                <small class="text-muted">
+                                    Based on creation and receipt timestamps
+                                </small>
+                            </div>
+
+                            <i class="bx bx-bar-chart-alt-2 fs-3"
+                               style="color:#003b71"></i>
+                        </div>
+
+                        <div class="p-4">
+
+                            <div class="performance-row">
+
+                                <div class="performance-label">
+                                    <span>
+                                        <i class="bx bx-check-circle text-success"></i>
+                                        Fast (1 hour or less)
+                                    </span>
+                                    <strong>@fast</strong>
+                                </div>
+
+                                <div class="progress">
+                                    <div class="progress-bar bg-success"
+                                         style="width:@fastPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="performance-row">
+
+                                <div class="performance-label">
+                                    <span>
+                                        <i class="bx bx-time text-warning"></i>
+                                        Medium (over 1 to 4 hours)
+                                    </span>
+                                    <strong>@medium</strong>
+                                </div>
+
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning"
+                                         style="width:@mediumPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="performance-row">
+
+                                <div class="performance-label">
+                                    <span>
+                                        <i class="bx bx-error-circle text-danger"></i>
+                                        Slow (over 4 hours)
+                                    </span>
+                                    <strong>@slow</strong>
+                                </div>
+
+                                <div class="progress">
+                                    <div class="progress-bar bg-danger"
+                                         style="width:@slowPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            @if (receivedCount == 0)
+                            {
+                                <div class="alert alert-light border mb-0">
+                                    <i class="bx bx-info-circle"></i>
+                                    Turnaround statistics will appear after
+                                    containers have recorded receipt dates.
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="panel">
+
+                        <div class="panel-header">
+                            <h5>Movement Summary</h5>
+                            <i class="bx bx-pie-chart-alt-2 fs-3"
+                               style="color:#003b71"></i>
+                        </div>
+
+                        <div class="p-4">
+
+                            <div class="d-flex justify-content-between
+                                        align-items-center mb-4">
+
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="stat-icon"
+                                          style="background:#dcfce7;color:#15803d">
+                                        <i class="bx bx-check"></i>
+                                    </span>
+
+                                    <div>
+                                        <div class="fw-semibold">Received</div>
+                                        <small class="text-muted">
+                                            Receipt date recorded
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <h4 class="fw-bold mb-0">@receivedCount</h4>
+
+                            </div>
+
+                            <div class="d-flex justify-content-between
+                                        align-items-center mb-4">
+
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="stat-icon"
+                                          style="background:#fff3cd;color:#b58105">
+                                        <i class="bx bx-hourglass"></i>
+                                    </span>
+
+                                    <div>
+                                        <div class="fw-semibold">Pending</div>
+                                        <small class="text-muted">
+                                            No receipt date recorded
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <h4 class="fw-bold mb-0">@pendingContainers</h4>
+
+                            </div>
+
+                            <div class="d-flex justify-content-between
+                                        align-items-center">
+
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="stat-icon"
+                                          style="background:#e8f1fb;color:#003b71">
+                                        <i class="bx bx-package"></i>
+                                    </span>
+
+                                    <div>
+                                        <div class="fw-semibold">Total Records</div>
+                                        <small class="text-muted">
+                                            All movement statuses
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <h4 class="fw-bold mb-0">@totalContainers</h4>
+
+                            </div>
+
+                            <hr />
+
+                            <a asp-controller="Hatchman"
+                               asp-action="MovedContainers"
+                               class="btn btn-primary w-100">
+                                Open Movement Register
+                                <i class="bx bx-right-arrow-alt"></i>
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- QUICK ACCESS -->
+            <section class="panel mb-4">
+
+                <div class="panel-header">
+                    <h5>Quick Access</h5>
+                    <small class="text-muted">Operational tools</small>
+                </div>
+
+                <div class="p-3">
+                    <div class="row g-3">
+
+                        <div class="col-md-6 col-xl-4">
+                            <a asp-controller="Hatchman"
+                               asp-action="MovedContainers"
+                               class="quick-link">
+
+                                <span class="quick-icon">
+                                    <i class="bx bx-transfer"></i>
+                                </span>
+
+                                <span>
+                                    <strong>Container Movements</strong>
+                                    <small>Track moved containers</small>
+                                </span>
+
+                            </a>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4">
+                            <a asp-controller="CargoCoordinator"
+                               asp-action="ManageContainers"
+                               class="quick-link">
+
+                                <span class="quick-icon">
+                                    <i class="bx bx-package"></i>
+                                </span>
+
+                                <span>
+                                    <strong>Containers</strong>
+                                    <small>Access container management</small>
+                                </span>
+
+                            </a>
+                        </div>
+
+                        <div class="col-md-6 col-xl-4">
+                            <a asp-controller="CargoCoordinator"
+                               asp-action="Reports"
+                               class="quick-link">
+
+                                <span class="quick-icon">
+                                    <i class="bx bx-bar-chart-alt-2"></i>
+                                </span>
+
+                                <span>
+                                    <strong>Reports</strong>
+                                    <small>Access operational reports</small>
+                                </span>
+
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- RECENT MOVEMENTS -->
+            <section class="panel" id="recentMovements">
+
+                <div class="panel-header">
+
+                    <div>
+                        <h5>Recent Container Movements</h5>
+                        <small class="text-muted">
+                            Latest records ordered by creation date
+                        </small>
+                    </div>
+
+                    <a asp-controller="Hatchman"
+                       asp-action="MovedContainers"
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                        <i class="bx bx-right-arrow-alt"></i>
+                    </a>
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover movement-table">
+
+                        <thead>
+                            <tr>
+                                <th>Sequence</th>
+                                <th>Container Number</th>
+                                <th>From Location</th>
+                                <th>To Location</th>
+                                <th>Created Date</th>
+                                <th>Received Date</th>
+                                <th>Status</th>
+                                <th>Turnaround</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @if (containers.Any())
+                            {
+                                foreach (var item in containers.Take(10))
+                                {
+                                    var isReceived = item.ReceivedDate.HasValue;
+
+                                    var turnaroundHours = isReceived
+                                    ? (item.ReceivedDate.Value -
+                                    item.CreatedDate).TotalHours
+                                    : 0;
+
+                                    <tr>
+
+                                        <td class="fw-semibold">
+                                            @item.Sequence
+                                        </td>
+
+                                        <td>
+                                            <span class="fw-bold"
+                                                  style="color:#003b71">
+                                                @item.Container
+                                            </span>
+                                        </td>
+
+                                        <td>@item.FromLocation</td>
+
+                                        <td>@item.ToLocation</td>
+
+                                        <td>
+                                            @item.CreatedDate.ToString(
+                                            "dd MMM yyyy HH:mm")
+                                </td>
+
+                                <td>
+                                    @if (isReceived)
+                                            {
+                                                @item.ReceivedDate.Value.ToString(
+                                                "dd MMM yyyy HH:mm")
+                                                                        }
+                                            else
+                                            {
+                                                <span class="text-muted">
+                                                    Not received
+                                                </span>
+                                            }
+                                        </td>
+
+                                        <td>
+                                            @if (isReceived)
+                                            {
+                                                <span class="status-badge status-received">
+                                                    <i class="bx bx-check-circle"></i>
+                                                    Received
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge status-pending">
+                                                    <i class="bx bx-time-five"></i>
+                                                    Pending
+                                                </span>
+                                            }
+                                        </td>
+
+                                        <td>
+                                            @if (isReceived)
+                                            {
+                                                <span class="fw-semibold">
+                                                    @turnaroundHours.ToString("N2") hrs
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="empty-state">
+                                            <i class="bx bx-package"></i>
+
+                                            <h6 class="mt-3 fw-bold">
+                                                No container movements found
+                                            </h6>
+
+                                            <p class="mb-0">
+                                                Movement records will appear here
+                                                when available.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+                @if (totalContainers > 10)
+                {
+                    <div class="p-3 text-center border-top">
+                        <a asp-controller="Hatchman"
+                           asp-action="MovedContainers"
+                           class="text-decoration-none fw-semibold">
+                            View all @totalContainers movements
+                            <i class="bx bx-right-arrow-alt"></i>
+                        </a>
+                    </div>
+                }
+
+            </section>
+
+            <footer class="dashboard-footer">
+                <i class="bx bx-shield-quarter"></i>
+                Transnet Hatchman Operations MIS
+            </footer>
+
+
+        @RenderBody()
+
+    </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        (() => {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            function closeSidebar() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function toggleSidebar() {
+                const isOpen = sidebar.classList.toggle('active');
+
+                overlay.classList.toggle('active', isOpen);
+                toggle.setAttribute('aria-expanded', String(isOpen));
+            }
+
+            toggle?.addEventListener('click', toggleSidebar);
+            overlay?.addEventListener('click', closeSidebar);
+
+            sidebar.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 992) {
+                        closeSidebar();
+                    }
+                });
+            });
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 992) {
+                    closeSidebar();
+                }
+            });
+        })();
+    </script>
+
+</body>
+</html>

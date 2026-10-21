@@ -127,6 +127,7 @@ namespace PrescribingSystem.Areas.Identity.Pages.Account
                         // ROLE-BASED REDIRECTS
                         // ============================
 
+
                         if (roles.Contains("CargoCoordinator"))
                             return RedirectToAction("Index", "CargoCoordinator");
 

@@ -15,9 +15,27 @@
             <p class="text-muted mt-2">Track all container movements between locations</p>
         </div>
         <div class="mt-2 mt-sm-0">
-            <a asp-action="CargoView" class="btn btn-outline-secondary me-2">
-                <i class="bi bi-arrow-return-left"></i> Back to Load Containers
-            </a>
+            @if (User.IsInRole("CargoCoordinator"))
+            {
+                <a asp-controller="CargoCoordinator"
+                   asp-action="CargoView"
+                   class="btn btn-outline-secondary me-2">
+
+                    <i class="bi bi-arrow-return-left"></i>
+                    Back to Load Containers
+
+                </a>
+            }
+            else
+            {
+                <button class="btn btn-outline-secondary me-2" disabled
+                        title="Only Cargo Coordinators can access this page">
+
+                    <i class="bi bi-arrow-return-left"></i>
+                    Back to Load Containers
+
+                </button>
+            }
             <button id="exportCsvBtn" class="btn btn-success">
                 <i class="bi bi-file-spreadsheet"></i> Export CSV
             </button>
@@ -161,7 +179,7 @@
                                     }
                                 </td>
 
-                                <td>
+                                @* <td>
                                     @if (item.ReceivedDate.HasValue)
                                     {
                                         <button class="btn btn-sm btn-success" disabled>
@@ -171,7 +189,7 @@
                                     }
                                     else
                                     {
-                                        <form asp-action="MarkContainerReceived"
+                                        <form asp-controller="Hatchman" asp-action="MarkContainerReceived"
                                               method="post"
                                               class="d-inline">
 
@@ -187,6 +205,46 @@
 
                                                 <i class="bi bi-box-arrow-in-down"></i>
                                                 Mark Received
+                                            </button>
+                                        </form>
+                                    }
+                                </td> *@
+                                <td>
+                                    <a asp-controller="Hatchman"
+                                       asp-action="ContainerDetails2"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-info btn-sm me-1">
+
+                                        <i class="bi bi-eye"></i>
+                                        View
+                                    </a>
+
+                                    @if (item.ReceivedDate.HasValue)
+                                    {
+                                        <button class="btn btn-success btn-sm" disabled>
+                                            <i class="bi bi-check-circle"></i>
+                                            Received
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="Hatchman"
+                                              asp-action="MarkContainerReceived"
+                                              method="post"
+                                              class="d-inline">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@item.Id" />
+
+                                            <button type="submit"
+                                                    class="btn btn-primary btn-sm"
+                                                    onclick="return confirm('Mark container @item.Container as received?');">
+
+                                                <i class="bi bi-box-arrow-in-down"></i>
+                                                Receive
                                             </button>
                                         </form>
                                     }

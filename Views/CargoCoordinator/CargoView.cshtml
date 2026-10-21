@@ -1,7 +1,9 @@
 ﻿@model List<COPIED>
+
 @{
     ViewData["Title"] = "Container Movement Dashboard";
 }
+
 <div class="container-fluid mt-4">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -11,15 +13,15 @@
             </h2>
             <p class="text-muted mt-2">Manage and move containers between locations</p>
         </div>
-        <a asp-action="MovedContainers" class="btn btn-outline-primary btn-lg shadow-sm" id="viewMovedBtn">
+        <a  asp-controller="CargoCoordinator"  asp-action="MovedContainers" class="btn btn-outline-primary btn-lg shadow-sm">
             <i class="bi bi-arrow-repeat"></i> View Moved Containers
         </a>
     </div>
 
-    <!-- Statistics Cards (clickable) -->
+    <!-- Statistics Cards (Optional but realistic) -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-primary bg-opacity-10 stat-card" data-stat="total">
+            <div class="card border-0 shadow-sm bg-primary bg-opacity-10">
                 <div class="card-body d-flex align-items-center">
                     <div class="me-3">
                         <i class="bi bi-boxes fs-1 text-primary"></i>
@@ -32,7 +34,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-success bg-opacity-10 stat-card" data-stat="from">
+            <div class="card border-0 shadow-sm bg-success bg-opacity-10">
                 <div class="card-body d-flex align-items-center">
                     <div class="me-3">
                         <i class="bi bi-geo-alt-fill fs-1 text-success"></i>
@@ -45,7 +47,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-info bg-opacity-10 stat-card" data-stat="to">
+            <div class="card border-0 shadow-sm bg-info bg-opacity-10">
                 <div class="card-body d-flex align-items-center">
                     <div class="me-3">
                         <i class="bi bi-pin-map-fill fs-1 text-info"></i>
@@ -58,7 +60,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm bg-warning bg-opacity-10 stat-card" data-stat="pending">
+            <div class="card border-0 shadow-sm bg-warning bg-opacity-10">
                 <div class="card-body d-flex align-items-center">
                     <div class="me-3">
                         <i class="bi bi-calendar-week fs-1 text-warning"></i>
@@ -99,7 +101,7 @@
                     <tbody>
                         @foreach (var item in Model)
                         {
-                            <tr data-container='@Json.Serialize(new { item.Sequence, item.Container, item.FromLocation, item.ToLocation, CreatedDate = item.CreatedDate.ToString("dd MMM yyyy hh:mm tt") })'>
+                            <tr>
                                 <td class="fw-semibold">@item.Sequence</td>
                                 <td>
                                     <span class="badge bg-secondary bg-opacity-25 text-dark px-3 py-2 rounded-pill">
@@ -133,6 +135,7 @@
                     </tbody>
                 </table>
             </div>
+            <!-- Empty state fallback (if no data) -->
             @if (!Model.Any())
             {
                 <div class="text-center py-5">
@@ -152,6 +155,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
+        /* Custom styles for better UX */
         .dataTables_filter, .dataTables_length, .dataTables_info, .dataTables_paginate {
             display: none !important;
         }
@@ -174,15 +178,6 @@
         .badge {
             font-weight: 500;
         }
-
-        .stat-card {
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-            .stat-card:hover {
-                transform: scale(1.02);
-            }
     </style>
 }
 
@@ -190,24 +185,25 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(document).ready(function () {
-            // Initialize DataTable
+            // Initialize DataTable with custom search, pagination, sorting
             var table = $('#containersTable').DataTable({
                 pageLength: 10,
                 lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-                order: [[4, 'desc']],
+                order: [[4, 'desc']], // Sort by Created Date descending
                 language: {
                     emptyTable: "No container records found",
                     info: "Showing _START_ to _END_ of _TOTAL_ entries",
                     infoEmpty: "Showing 0 to 0 of 0 entries",
                 },
                 drawCallback: function() {
+                    // Update custom pagination info and buttons
                     var info = table.page.info();
                     $('#tableInfo').text(`Showing ${info.start + 1} to ${info.end} of ${info.recordsDisplay} containers`);
 
+                    // Build pagination UI manually (optional)
                     var pagination = $('#tablePagination').empty();
                     var pageCount = info.pages;
                     var currentPage = info.page;
@@ -230,90 +226,16 @@
                 }
             });
 
-            // Custom search
+            // Custom search box
             $('#tableSearch').on('keyup', function() {
                 table.search(this.value).draw();
             });
 
-            // ---------- NEW: Row click popup (shows container details) ----------
-            $('#containersTable tbody').on('click', 'tr', function(e) {
-                // Ignore clicks inside the action column (where the Move button/form is)
-                if ($(e.target).closest('td:last-child').length) return;
-
-                var data = $(this).data('container');
-                if (!data) return;
-
-                Swal.fire({
-                    title: `Container ${data.Container}`,
-                    html: `
-                        <div class="text-start">
-                            <p><strong>Sequence:</strong> ${data.Sequence}</p>
-                            <p><strong>From:</strong> ${data.FromLocation}</p>
-                            <p><strong>To:</strong> ${data.ToLocation}</p>
-                            <p><strong>Created:</strong> ${data.CreatedDate}</p>
-                        </div>
-                    `,
-                    icon: 'info',
-                    confirmButtonText: 'Close',
-                    confirmButtonColor: '#0d6efd'
-                });
-            });
-
-            // ---------- NEW: Statistics card popups ----------
-            $('.stat-card').on('click', function() {
-                var stat = $(this).data('stat');
-                var title, description;
-                switch (stat) {
-                    case 'total':
-                        title = 'Total Containers';
-                        description = 'The total number of container records currently loaded in the system.';
-                        break;
-                    case 'from':
-                        title = 'Unique From Locations';
-                        description = 'The number of distinct origin locations where containers are being moved from.';
-                        break;
-                    case 'to':
-                        title = 'Unique To Locations';
-                        description = 'The number of distinct destination locations where containers are being moved to.';
-                        break;
-                    case 'pending':
-                        title = 'Pending Moves';
-                        description = 'Containers that have not yet been moved (i.e., FromLocation ≠ ToLocation).';
-                        break;
-                }
-                Swal.fire({
-                    title: title,
-                    text: description,
-                    icon: 'info',
-                    confirmButtonText: 'Got it',
-                    confirmButtonColor: '#0d6efd'
-                });
-            });
-
-            // ---------- Optional: Popup for "View Moved Containers" link ----------
-            $('#viewMovedBtn').on('click', function(e) {
-                e.preventDefault();
-                var href = $(this).attr('href');
-                Swal.fire({
-                    title: 'View Moved Containers',
-                    text: 'You are about to view the list of containers that have already been moved.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Proceed',
-                    cancelButtonText: 'Stay',
-                    confirmButtonColor: '#0d6efd'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = href;
-                    }
-                });
-            });
-
-            // Move form confirmation (already present, enhanced with SweetAlert)
+            // Real-world confirmation on move with container details
             $('.move-form').on('submit', function(e) {
                 var containerName = $(this).data('container');
                 var form = this;
-                e.preventDefault();
+                e.preventDefault(); // stop to show custom confirm
 
                 Swal.fire({
                     title: 'Confirm Container Move',
@@ -327,10 +249,12 @@
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // Show loading state on button
                         var btn = $(form).find('.move-btn');
                         var originalHtml = btn.html();
                         btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Moving...').prop('disabled', true);
 
+                        // Submit the form via AJAX for a smoother experience (optional)
                         $.ajax({
                             url: $(form).attr('action'),
                             type: 'POST',
@@ -343,6 +267,7 @@
                                     timer: 2000,
                                     showConfirmButton: false
                                 }).then(() => {
+                                    // Reload page or remove row - realistic would refresh the list
                                     location.reload();
                                 });
                             },
@@ -359,6 +284,15 @@
                     }
                 });
             });
+
+            // Optional: trigger sweetalert library if not present, add CDN
+            if (typeof Swal === 'undefined') {
+                var swalLink = document.createElement('script');
+                swalLink.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                document.head.appendChild(swalLink);
+            }
         });
     </script>
+    <!-- SweetAlert2 CDN for modals -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 }

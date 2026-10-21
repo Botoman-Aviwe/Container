@@ -1,9 +1,1406 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@using PrescribingSystem.Models.Viewmodel
+@model DashboardViewModel
 
 @{
     Layout = "_LayoutHome";
-    ViewData["Title"] = "Home";
-   
+    ViewData["Title"] = "Cargo Dashboard";
+}
+
+<div class="container-fluid py-4">
+
+    ```
+    <!-- =========================================================
+         DASHBOARD HEADER
+    ========================================================== -->
+
+    <div class="d-flex flex-column flex-lg-row
+            justify-content-between
+            align-items-lg-center
+            mb-4">
+
+        <div>
+
+            <h2 class="fw-bold mb-1 text-dark">
+
+                <i class="bi bi-speedometer2 me-2"
+                   style="color:#003b71;"></i>
+
+                Cargo Dashboard
+
+            </h2>
+
+            <p class="text-muted mb-0">
+
+                Container movement monitoring and
+                management information
+
+            </p>
+
+        </div>
+
+        <div class="mt-3 mt-lg-0">
+
+            <button type="button"
+                    class="btn btn-outline-primary"
+                    onclick="location.reload()">
+
+                <i class="bi bi-arrow-clockwise me-1"></i>
+
+                Refresh Data
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         KPI CARDS
+    ========================================================== -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- TOTAL RECORDS -->
+
+        <div class="col-xl-4 col-md-6">
+
+            <div class="dashboard-kpi-card">
+
+                <div class="kpi-icon">
+
+                    <i class="bi bi-box-seam"></i>
+
+                </div>
+
+                <div class="kpi-content">
+
+                    <div class="kpi-label">
+                        Total Container Movements
+                    </div>
+
+                    <div class="kpi-value">
+
+                        @(Model?.CopiedList?.Count ?? 0)
+
+                    </div>
+
+                    <div class="kpi-description">
+
+                        All recorded movements
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- LOAD -->
+
+        <div class="col-xl-4 col-md-6">
+
+            <div class="dashboard-kpi-card load-card">
+
+                <div class="kpi-icon">
+
+                    <i class="bi bi-box-arrow-up"></i>
+
+                </div>
+
+                <div class="kpi-content">
+
+                    <div class="kpi-label">
+                        Load Movements
+                    </div>
+
+                    <div class="kpi-value">
+
+                        @(Model?.TotalLoad ?? 0)
+
+                    </div>
+
+                    <div class="kpi-description">
+
+                        Containers loaded
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- DISCHARGE -->
+
+        <div class="col-xl-4 col-md-6">
+
+            <div class="dashboard-kpi-card discharge-card">
+
+                <div class="kpi-icon">
+
+                    <i class="bi bi-box-arrow-down"></i>
+
+                </div>
+
+                <div class="kpi-content">
+
+                    <div class="kpi-label">
+                        Discharge Movements
+                    </div>
+
+                    <div class="kpi-value">
+
+                        @(Model?.TotalDischarge ?? 0)
+
+                    </div>
+
+                    <div class="kpi-description">
+
+                        Containers discharged
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         ANALYTICS ROW
+    ========================================================== -->
+
+    <div class="row g-4 mb-4">
+
+        <!-- MOVEMENT SUMMARY -->
+
+        <div class="col-lg-5">
+
+            <div class="dashboard-card h-100">
+
+                <div class="dashboard-card-header">
+
+                    <div>
+
+                        <h5 class="mb-1">
+
+                            <i class="bi bi-bar-chart-line me-2"></i>
+
+                            Movement Summary
+
+                        </h5>
+
+                        <small>
+                            Load versus discharge activity
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="dashboard-card-body">
+
+                    <div class="movement-summary">
+
+                        <div class="movement-item">
+
+                            <div class="movement-title">
+
+                                <span class="movement-dot load-dot"></span>
+
+                                Load
+
+                            </div>
+
+                            <strong>
+                                @(Model?.TotalLoad ?? 0)
+                            </strong>
+
+                        </div>
+
+
+                        <div class="movement-progress">
+
+                            @{
+                                var totalMovements =
+                                (Model?.TotalLoad ?? 0) +
+                                (Model?.TotalDischarge ?? 0);
+
+                                var loadPercentage =
+                                totalMovements > 0
+                                ? ((double)(Model?.TotalLoad ?? 0) / totalMovements) * 100
+                                : 0;
+
+                                var dischargePercentage =
+                                totalMovements > 0
+                                ? ((double)(Model?.TotalDischarge ?? 0) / totalMovements) * 100
+                                : 0;
+                            }
+
+                            <div class="progress mb-3"
+                                 style="height:12px;">
+
+                                <div class="progress-bar load-progress"
+                                     role="progressbar"
+                                     style="width:@loadPercentage.ToString("0.##")%">
+                                </div>
+
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+
+                                <span class="small text-muted">
+
+                                    Load
+                                    @loadPercentage.ToString("0.0")%
+
+                                </span>
+
+                                <span class="small text-muted">
+
+                                    Discharge
+                                    @dischargePercentage.ToString("0.0")%
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="movement-item mt-4">
+
+                            <div class="movement-title">
+
+                                <span class="movement-dot discharge-dot"></span>
+
+                                Discharge
+
+                            </div>
+
+                            <strong>
+                                @(Model?.TotalDischarge ?? 0)
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- SYSTEM STATUS -->
+
+        <div class="col-lg-7">
+
+            <div class="dashboard-card h-100">
+
+                <div class="dashboard-card-header">
+
+                    <div>
+
+                        <h5 class="mb-1">
+
+                            <i class="bi bi-activity me-2"></i>
+
+                            MIS Overview
+
+                        </h5>
+
+                        <small>
+                            Container operations information
+                        </small>
+
+                    </div>
+
+                    <span class="status-badge">
+
+                        <span class="status-dot"></span>
+
+                        System Active
+
+                    </span>
+
+                </div>
+
+                <div class="dashboard-card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+
+                            <div class="overview-item">
+
+                                <div class="overview-icon">
+
+                                    <i class="bi bi-database"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <span>Data Source</span>
+
+                                    <strong>
+                                        Container Movement Data
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <div class="overview-item">
+
+                                <div class="overview-icon">
+
+                                    <i class="bi bi-clock-history"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <span>Latest Records</span>
+
+                                    <strong>
+                                        Live MIS Data
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <div class="overview-item">
+
+                                <div class="overview-icon">
+
+                                    <i class="bi bi-arrow-left-right"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <span>Movement Types</span>
+
+                                    <strong>
+                                        Load & Discharge
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <div class="overview-item">
+
+                                <div class="overview-icon">
+
+                                    <i class="bi bi-shield-check"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <span>Information</span>
+
+                                    <strong>
+                                        Operational MIS
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         CONTAINER MOVEMENTS
+    ========================================================== -->
+
+    <div class="dashboard-card">
+
+        <!-- HEADER -->
+
+        <div class="dashboard-card-header">
+
+            <div>
+
+                <h5 class="mb-1">
+
+                    <i class="bi bi-boxes me-2"></i>
+
+                    Container Movements
+
+                </h5>
+
+                <small>
+                    Complete COPIED movement records
+                </small>
+
+            </div>
+
+            <span class="record-count">
+
+                @(Model?.CopiedList?.Count ?? 0)
+                Records
+
+            </span>
+
+        </div>
+
+
+        <!-- FILTERS -->
+
+        <div class="filter-section">
+
+            <div class="row g-3 align-items-end">
+
+                <!-- SEARCH -->
+
+                <div class="col-lg-5">
+
+                    <label class="form-label fw-semibold">
+
+                        Search Containers
+
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+
+                            <i class="bi bi-search"></i>
+
+                        </span>
+
+                        <input type="text"
+                               id="containerSearch"
+                               class="form-control"
+                               placeholder="Search container, location or movement..." />
+
+                    </div>
+
+                </div>
+
+
+                <!-- MOVEMENT FILTER -->
+
+                <div class="col-lg-3">
+
+                    <label class="form-label fw-semibold">
+
+                        Movement Type
+
+                    </label>
+
+                    <select id="movementFilter"
+                            class="form-select">
+
+                        <option value="">
+                            All Movements
+                        </option>
+
+                        <option value="Load">
+                            Load
+                        </option>
+
+                        <option value="Discharge">
+                            Discharge
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- CLEAR -->
+
+                <div class="col-lg-2">
+
+                    <button type="button"
+                            id="clearFilters"
+                            class="btn btn-outline-secondary w-100">
+
+                        <i class="bi bi-x-circle me-1"></i>
+
+                        Clear
+
+                    </button>
+
+                </div>
+
+
+                <!-- REFRESH -->
+
+                <div class="col-lg-2">
+
+                    <button type="button"
+                            class="btn btn-primary w-100"
+                            onclick="location.reload()">
+
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+
+                        Refresh
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- TABLE -->
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle mb-0"
+                   id="containerTable">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            #
+                        </th>
+
+                        <th>
+                            Sequence
+                        </th>
+
+                        <th>
+                            Container
+                        </th>
+
+                        <th>
+                            Movement
+                        </th>
+
+                        <th>
+                            From Location
+                        </th>
+
+                        <th>
+                            To Location
+                        </th>
+
+                        <th>
+                            Created Date
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model?.CopiedList != null &&
+                                        Model.CopiedList.Any())
+                    {
+
+                        foreach (var item in Model.CopiedList)
+                        {
+
+                            <tr>
+
+                                <td class="text-muted">
+
+                                    @item.Id
+
+                                </td>
+
+
+                                <td>
+
+                                    <span class="sequence-badge">
+
+                                        @item.Sequence
+
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="container-number">
+
+                                        <i class="bi bi-box me-2"></i>
+
+                                        @item.Container
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    @if (item.KindMove == "Load")
+                                    {
+
+                                        <span class="movement-badge load-badge">
+
+                                            <i class="bi bi-arrow-up-circle me-1"></i>
+
+                                            Load
+
+                                        </span>
+
+                                    }
+                                    else if (item.KindMove == "Discharge")
+                                    {
+
+                                        <span class="movement-badge discharge-badge">
+
+                                            <i class="bi bi-arrow-down-circle me-1"></i>
+
+                                            Discharge
+
+                                        </span>
+
+                                    }
+                                    else
+                                    {
+
+                                        <span class="movement-badge other-badge">
+
+                                            @item.KindMove
+
+                                        </span>
+
+                                    }
+
+                                </td>
+
+
+                                <td>
+
+                                    @if (!string.IsNullOrWhiteSpace(item.FromLocation))
+                                    {
+
+                                        <span>
+
+                                            <i class="bi bi-geo-alt text-muted me-1"></i>
+
+                                            @item.FromLocation
+
+                                        </span>
+
+                                    }
+                                    else
+                                    {
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    }
+
+                                </td>
+
+
+                                <td>
+
+                                    @if (!string.IsNullOrWhiteSpace(item.ToLocation))
+                                    {
+
+                                        <span>
+
+                                            <i class="bi bi-geo-alt-fill text-muted me-1"></i>
+
+                                            @item.ToLocation
+
+                                        </span>
+
+                                    }
+                                    else
+                                    {
+
+                                        <span class="text-muted">
+                                            —
+                                        </span>
+
+                                    }
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="date-display">
+
+                                        <strong>
+                                            @item.CreatedDate.ToString("dd MMM yyyy")
+                                        </strong>
+
+                                        <small>
+                                            @item.CreatedDate.ToString("HH:mm")
+                                        </small>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        }
+
+                    }
+                    else
+                    {
+
+                        <tr id="noDataRow">
+
+                            <td colspan="7"
+                                class="text-center py-5">
+
+                                <div class="empty-state">
+
+                                    <i class="bi bi-inbox"></i>
+
+                                    <h5>
+                                        No Container Movements
+                                    </h5>
+
+                                    <p class="text-muted mb-0">
+
+                                        There are currently no
+                                        container movement records.
+
+                                    </p>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- NO SEARCH RESULTS -->
+
+        <div id="noSearchResults"
+             class="text-center py-5"
+             style="display:none;">
+
+            <i class="bi bi-search display-5 text-muted"></i>
+
+            <h5 class="mt-3">
+                No matching records
+            </h5>
+
+            <p class="text-muted">
+
+                Try changing your search or movement filter.
+
+            </p>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
+
+<!-- =========================================================
+     PAGE STYLES
+========================================================== -->
+@section Styles {
+
+    <style>
+
+        /* =========================================================
+               KPI CARDS
+            ========================================================== */
+
+        .dashboard-kpi-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            height: 100%;
+            border-left: 5px solid #003b71;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .dashboard-kpi-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+            }
+
+            .dashboard-kpi-card.load-card {
+                border-left-color: #198754;
+            }
+
+            .dashboard-kpi-card.discharge-card {
+                border-left-color: #dc3545;
+            }
+
+
+        .kpi-icon {
+            width: 60px;
+            height: 60px;
+            min-width: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eaf3fb;
+            color: #003b71;
+            font-size: 1.6rem;
+        }
+
+        .load-card .kpi-icon {
+            background: #eaf7ef;
+            color: #198754;
+        }
+
+        .discharge-card .kpi-icon {
+            background: #fdecee;
+            color: #dc3545;
+        }
+
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            line-height: 1.1;
+            font-weight: 800;
+            color: #1f2937;
+        }
+
+        .kpi-description {
+            font-size: 0.75rem;
+            color: #8a94a6;
+            margin-top: 5px;
+        }
+
+
+        /* =========================================================
+               DASHBOARD CARDS
+            ========================================================== */
+
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .dashboard-card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #edf0f3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .dashboard-card-header h5 {
+                color: #003b71;
+                font-weight: 700;
+            }
+
+            .dashboard-card-header small {
+                color: #8a94a6;
+            }
+
+        .dashboard-card-body {
+            padding: 24px;
+        }
+
+
+        /* =========================================================
+               MOVEMENT SUMMARY
+            ========================================================== */
+
+        .movement-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1rem;
+        }
+
+        .movement-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .movement-item strong {
+            font-size: 1.4rem;
+        }
+
+        .movement-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .load-dot {
+            background: #198754;
+        }
+
+        .discharge-dot {
+            background: #dc3545;
+        }
+
+        .load-progress {
+            background: #198754;
+        }
+
+
+        /* =========================================================
+               STATUS
+            ========================================================== */
+
+        .status-badge {
+            background: #eaf7ef;
+            color: #198754;
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background: #198754;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+
+        /* =========================================================
+               OVERVIEW ITEMS
+            ========================================================== */
+
+        .overview-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .overview-icon {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 9px;
+            background: #eaf3fb;
+            color: #003b71;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+        }
+
+        .overview-item span {
+            display: block;
+            color: #8a94a6;
+            font-size: 0.72rem;
+            margin-bottom: 2px;
+        }
+
+        .overview-item strong {
+            display: block;
+            color: #343a40;
+            font-size: 0.86rem;
+        }
+
+
+        /* =========================================================
+               RECORD COUNT
+            ========================================================== */
+
+        .record-count {
+            background: #eaf3fb;
+            color: #003b71;
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+
+        /* =========================================================
+               FILTERS
+            ========================================================== */
+
+        .filter-section {
+            padding: 20px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #edf0f3;
+        }
+
+            .filter-section .form-control,
+            .filter-section .form-select {
+                border-color: #dce1e7;
+                min-height: 43px;
+            }
+
+                .filter-section .form-control:focus,
+                .filter-section .form-select:focus {
+                    border-color: #003b71;
+                    box-shadow: 0 0 0 0.2rem rgba(0,59,113,0.12);
+                }
+
+
+        /* =========================================================
+               TABLE
+            ========================================================== */
+
+        #containerTable {
+            margin: 0;
+        }
+
+            #containerTable thead th {
+                background: #003b71;
+                color: #ffffff;
+                border: none;
+                font-size: 0.78rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                padding: 15px 14px;
+                white-space: nowrap;
+            }
+
+            #containerTable tbody td {
+                padding: 15px 14px;
+                border-color: #edf0f3;
+                font-size: 0.88rem;
+            }
+
+            #containerTable tbody tr {
+                transition: background 0.15s ease;
+            }
+
+                #containerTable tbody tr:hover {
+                    background: #f8fbff;
+                }
+
+
+        /* =========================================================
+               CONTAINER NUMBER
+            ========================================================== */
+
+        .container-number {
+            font-weight: 700;
+            color: #003b71;
+            white-space: nowrap;
+        }
+
+
+        /* =========================================================
+               SEQUENCE
+            ========================================================== */
+
+        .sequence-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 35px;
+            padding: 4px 8px;
+            background: #f0f2f5;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+
+        /* =========================================================
+               MOVEMENT BADGES
+            ========================================================== */
+
+        .movement-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 11px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .load-badge {
+            background: #eaf7ef;
+            color: #198754;
+        }
+
+        .discharge-badge {
+            background: #fdecee;
+            color: #dc3545;
+        }
+
+        .other-badge {
+            background: #f0f2f5;
+            color: #6c757d;
+        }
+
+
+        /* =========================================================
+               DATE
+            ========================================================== */
+
+        .date-display strong {
+            display: block;
+            color: #343a40;
+            font-size: 0.82rem;
+        }
+
+        .date-display small {
+            display: block;
+            color: #8a94a6;
+            font-size: 0.73rem;
+            margin-top: 2px;
+        }
+
+
+        /* =========================================================
+               EMPTY STATE
+            ========================================================== */
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #b7c0cb;
+        }
+
+        .empty-state h5 {
+            margin-top: 15px;
+            color: #495057;
+        }
+
+
+        /* =========================================================
+               RESPONSIVE
+            ========================================================== */
+
+        @@media (max-width: 767px) {
+
+            .dashboard-kpi-card {
+                padding: 18px;
+            }
+
+            .kpi-value {
+                font-size: 1.6rem;
+            }
+
+            .dashboard-card-header {
+                padding: 16px;
+            }
+
+            .dashboard-card-body {
+                padding: 16px;
+            }
+
+            .filter-section {
+                padding: 16px;
+            }
+        }
+
+    </style>
+
+}
+
+<!-- =========================================================
+     PAGE JAVASCRIPT
+========================================================== -->
+@section Scripts {
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const searchInput =
+                document.getElementById("containerSearch");
+
+            const movementFilter =
+                document.getElementById("movementFilter");
+
+            const clearButton =
+                document.getElementById("clearFilters");
+
+            const table =
+                document.getElementById("containerTable");
+
+            const noSearchResults =
+                document.getElementById("noSearchResults");
+
+            if (!table) {
+                return;
+            }
+
+            const rows =
+                table.querySelectorAll("tbody tr");
+
+            function filterTable() {
+
+                const searchValue =
+                    (searchInput?.value || "")
+                        .toLowerCase()
+                        .trim();
+
+                const movementValue =
+                    (movementFilter?.value || "")
+                        .toLowerCase()
+                        .trim();
+
+                let visibleRows = 0;
+
+                rows.forEach(function (row) {
+
+                    if (row.id === "noDataRow") {
+                        return;
+                    }
+
+                    const rowText =
+                        row.innerText.toLowerCase();
+
+                    const movementCell =
+                        row.cells.length > 3
+                            ? row.cells[3].innerText.toLowerCase()
+                            : "";
+
+                    const matchesSearch =
+                        searchValue === "" ||
+                        rowText.includes(searchValue);
+
+                    const matchesMovement =
+                        movementValue === "" ||
+                        movementCell.includes(movementValue);
+
+                    if (matchesSearch && matchesMovement) {
+
+                        row.style.display = "";
+
+                        visibleRows++;
+
+                    }
+                    else {
+
+                        row.style.display = "none";
+
+                    }
+
+                });
+
+                if (noSearchResults) {
+
+                    noSearchResults.style.display =
+                        visibleRows === 0 &&
+                        rows.length > 0 &&
+                        !document.getElementById("noDataRow")
+                            ? "block"
+                            : "none";
+
+                }
+
+            }
+
+
+            if (searchInput) {
+
+                searchInput.addEventListener(
+                    "input",
+                    filterTable
+                );
+
+            }
+
+
+            if (movementFilter) {
+
+                movementFilter.addEventListener(
+                    "change",
+                    filterTable
+                );
+
+            }
+
+
+            if (clearButton) {
+
+                clearButton.addEventListener(
+                    "click",
+                    function () {
+
+                        if (searchInput) {
+                            searchInput.value = "";
+                        }
+
+                        if (movementFilter) {
+                            movementFilter.value = "";
+                        }
+
+                        filterTable();
+
+                    }
+                );
+
+            }
+
+        });
+
+    </script>
+
 }

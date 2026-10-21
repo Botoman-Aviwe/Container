@@ -1,0 +1,80 @@
+﻿@model MovedContainer
+
+@{
+    ViewData["Title"] = "Container Details";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-box-seam"></i>
+                Container Details
+            </h4>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Container Number</div>
+                <div class="col-md-8">@Model.Container</div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Sequence</div>
+                <div class="col-md-8">@Model.Sequence</div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">From Location</div>
+                <div class="col-md-8">@Model.FromLocation</div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">To Location</div>
+                <div class="col-md-8">@Model.ToLocation</div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Moved Date</div>
+                <div class="col-md-8">
+                    @Model.CreatedDate.ToString("dd MMM yyyy HH:mm")
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 fw-bold">Received Date</div>
+                <div class="col-md-8">
+
+                    @if (Model.ReceivedDate.HasValue)
+                    {
+                        <span class="badge bg-success">
+                            @Model.ReceivedDate.Value.ToString("dd MMM yyyy HH:mm")
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">
+                            Not Received
+                        </span>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card-footer">
+            <a asp-action="MovedContainers"
+               class="btn btn-secondary">
+
+                <i class="bi bi-arrow-left"></i>
+                Back
+            </a>
+        </div>
+
+    </div>
+
+</div>

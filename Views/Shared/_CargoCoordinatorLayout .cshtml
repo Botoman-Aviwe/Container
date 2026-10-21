@@ -1,274 +1,633 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿```cshtml
+@using Microsoft.AspNetCore.Identity
 @using PrescribingSystem.Data
+@using System
+@using System.Linq
 @inject UserManager<ApplicationUser> UserManager
+
 @{
     ApplicationUser appUser = null;
     string fullName = "Guest";
-    string roleName = "";
-    string initials = "";
+    string roleName = "Guest";
+    string initials = "GU";
 
-    if (User.Identity.IsAuthenticated)
+    if (User.Identity?.IsAuthenticated == true)
     {
         appUser = await UserManager.GetUserAsync(User);
 
         if (appUser != null)
         {
-            fullName = $"{appUser.FirstName} {appUser.LastName}";
+            fullName = $"{appUser.FirstName} {appUser.LastName}".Trim();
+
             var roles = await UserManager.GetRolesAsync(appUser);
             roleName = roles.FirstOrDefault() ?? "No Role";
 
-            initials = $"{appUser.FirstName?[0]}{appUser.LastName?[0]}".ToUpper();
+            var firstInitial = !string.IsNullOrWhiteSpace(appUser.FirstName)
+                ? appUser.FirstName.Substring(0, 1)
+                : "";
+
+            var lastInitial = !string.IsNullOrWhiteSpace(appUser.LastName)
+                ? appUser.LastName.Substring(0, 1)
+                : "";
+
+            initials = (firstInitial + lastInitial).ToUpperInvariant();
+
+            if (string.IsNullOrWhiteSpace(initials))
+            {
+                initials = "GU";
+            }
         }
+    }
+
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    bool IsCurrent(string controller, string action = "")
+    {
+        return currentController.Equals(controller, StringComparison.OrdinalIgnoreCase)
+            && (string.IsNullOrEmpty(action)
+                || currentAction.Equals(action, StringComparison.OrdinalIgnoreCase));
+    }
+
+    bool IsInController(string controller)
+    {
+        return currentController.Equals(controller, StringComparison.OrdinalIgnoreCase);
     }
 }
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewBag.Title - Cargo Management System</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Boxicons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" />
+    <title>@ViewData["Title"] - Transnet Container Operations MIS</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <!-- Boxicons: sidebar icons -->
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet" />
+
+    <!-- Bootstrap Icons: dashboard icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          rel="stylesheet" />
+
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet" />
 
-    <!-- Custom Layout CSS -->
-    <link rel="stylesheet" href="~/css/sidebar.css" />
+    <!-- Your existing sidebar stylesheet -->
+    <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
 
     <style>
-        /* Same submenu styles as original */
-        .nav-link.has-submenu {
+        :root {
+            --transnet-blue: #003b71;
+            --transnet-dark: #00264d;
+            --transnet-yellow: #f5c400;
+            --sidebar-width: 265px;
+            --header-height: 76px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: #f4f7fb;
+            color: #1e293b;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            overflow-y: auto;
+            background: linear-gradient(180deg, var(--transnet-dark), #003b71);
+            color: white;
+            z-index: 1050;
+            transition: transform .3s ease;
+            box-shadow: 4px 0 20px rgba(0, 25, 55, .12);
+        }
+
+        .sidebar-header {
+            min-height: 90px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,.12);
+        }
+
+            .sidebar-header .logo {
+                width: 45px;
+                height: 45px;
+                object-fit: contain;
+                background: white;
+                border-radius: 10px;
+                padding: 4px;
+                flex-shrink: 0;
+            }
+
+        .brand-text {
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .brand-subtext {
+            color: rgba(255,255,255,.68);
+            font-size: 11px;
+            font-weight: 400;
+            margin-top: 3px;
+        }
+
+        .menu-links {
+            padding: 16px 12px 28px;
+            margin: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            padding: 0;
+            margin-bottom: 5px;
             position: relative;
         }
 
-            .nav-link.has-submenu > a {
+            .nav-link > a {
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
+                gap: 12px;
+                padding: 12px 13px;
+                min-height: 45px;
+                color: rgba(255,255,255,.82);
+                border-radius: 9px;
+                font-size: 13px;
+                font-weight: 500;
+                transition: background .2s ease, color .2s ease;
             }
 
-        .submenu-toggle {
-            transition: transform 0.3s ease;
-            margin-left: auto;
+                .nav-link > a:hover,
+                .nav-link > a.active {
+                    color: #fff;
+                    background: rgba(255,255,255,.12);
+                }
+
+                .nav-link > a.active {
+                    box-shadow: inset 3px 0 var(--transnet-yellow);
+                }
+
+            .nav-link .icon {
+                font-size: 21px;
+                flex-shrink: 0;
+            }
+
+        .submenu-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .nav-link.has-submenu.active .submenu-toggle {
+        .nav-link.has-submenu > .submenu-parent {
+            justify-content: space-between;
+        }
+
+        .submenu-toggle {
+            font-size: 18px;
+            transition: transform .25s ease;
+        }
+
+        .nav-link.has-submenu.active > .submenu-parent .submenu-toggle {
             transform: rotate(180deg);
         }
 
         .submenu {
+            list-style: none;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease;
-            padding-left: 1.5rem;
+            padding: 0 0 0 13px;
+            margin: 0;
+            transition: max-height .3s ease;
         }
 
-        .nav-link.has-submenu.active .submenu {
-            max-height: 500px;
+        .nav-link.has-submenu.active > .submenu {
+            max-height: 650px;
         }
 
         .submenu li {
-            margin: 0.25rem 0;
+            margin: 3px 0;
         }
 
         .submenu a {
             display: flex;
             align-items: center;
-            padding: 0.5rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            border-radius: 0.375rem;
-            transition: all 0.3s ease;
+            gap: 9px;
+            padding: 10px 11px;
+            border-radius: 8px;
+            color: rgba(255,255,255,.72);
+            font-size: 12px;
+            transition: background .2s ease, color .2s ease;
         }
 
             .submenu a:hover,
             .submenu a.active {
-                background: rgba(255, 255, 255, 0.1);
+                background: rgba(255,255,255,.11);
                 color: white;
             }
 
         .submenu .icon {
-            font-size: 1.1rem;
-            margin-right: 0.75rem;
+            font-size: 18px;
+        }
+
+        /* Main area */
+        .main-content {
+            min-height: 100vh;
+            margin-left: var(--sidebar-width);
+            transition: margin-left .3s ease;
+        }
+
+        .header-bar {
+            height: var(--header-height);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 28px;
+            background: rgba(255,255,255,.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e8edf4;
+        }
+
+        .sidebar-toggle {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #e3e9f1;
+            border-radius: 10px;
+            background: white;
+            color: var(--transnet-blue);
+            font-size: 23px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+            .sidebar-toggle:hover {
+                background: #edf5fd;
+            }
+
+        .page-title {
+            flex: 1;
+            min-width: 0;
+        }
+
+            .page-title h1 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 800;
+                color: var(--transnet-dark);
+                overflow-wrap: anywhere;
+            }
+
+        .user-menu {
+            display: grid;
+            grid-template-columns: minmax(0, auto) 42px;
+            grid-template-rows: auto auto;
+            column-gap: 12px;
+            align-items: center;
+        }
+
+        .user-name {
+            grid-column: 1;
+            grid-row: 1;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .user-role {
+            grid-column: 1;
+            grid-row: 2;
+            text-align: right;
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        .user-avatar {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--transnet-blue);
+            color: white;
+            font-weight: 800;
+            font-size: 13px;
+            border: 2px solid #d8e8f7;
+        }
+
+        .content-wrapper {
+            padding: 26px 28px 36px;
+            min-width: 0;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+                .sidebar.active {
+                    transform: translateX(0);
+                }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header-bar {
+                padding: 0 18px;
+            }
+
+            .content-wrapper {
+                padding: 20px 18px 30px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            :root {
+                --header-height: 66px;
+            }
+
+            .header-bar {
+                gap: 10px;
+                padding: 0 12px;
+            }
+
+            .page-title h1 {
+                font-size: 14px;
+            }
+
+            .user-menu {
+                grid-template-columns: 36px;
+            }
+
+            .user-name,
+            .user-role {
+                display: none;
+            }
+
+            .user-avatar {
+                grid-column: 1;
+                grid-row: 1;
+                width: 36px;
+                height: 36px;
+            }
+
+            .content-wrapper {
+                padding: 16px 12px 25px;
+            }
         }
     </style>
+
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <body>
     <!-- Sidebar -->
-    <nav class="sidebar">
+    <nav class="sidebar" id="appSidebar" aria-label="Main navigation">
+
         <div class="sidebar-header">
-            <img src="~/css/Transnet_logo.svg.webp" alt="Logo" class="logo" />
+            <img src="~/css/Transnet_logo.svg.webp"
+                 alt="Transnet Logo"
+                 class="logo" />
+
             <div class="brand-text">
-                <div>Cargo Management</div>
-                <div class="brand-subtext">Information System</div>
+                <div>Transnet Operations</div>
+                <div class="brand-subtext">Container Operations MIS</div>
             </div>
         </div>
 
         <ul class="menu-links">
+
             <!-- Dashboard -->
             <li class="nav-link">
-                <a asp-controller="Home" asp-action="Index" class="active">
-                    <i class='bx bx-home icon'></i>
+                <a asp-controller="CargoCoordinator"
+                   asp-action="Index"
+                   class="@(IsCurrent("CargoCoordinator", "Index") ? "active" : "")">
+                    <i class="bx bx-home icon"></i>
                     <span class="nav-text">Dashboard</span>
                 </a>
             </li>
 
-            <!-- Shipments Section with Collapse -->
-            <li class="nav-link has-submenu">
-                <a href="#" class="submenu-parent">
-                    <div class="submenu-content">
-                        <i class='bx bx-ship icon'></i>
+            <!-- Shipments -->
+            <li class="nav-link has-submenu @(IsInController("CargoCoordinator") && (IsCurrent("CargoCoordinator", "CargoView") || IsCurrent("CargoCoordinator", "IndexShipments") || IsCurrent("CargoCoordinator", "ShipmentTracking")) ? "active" : "")">
+
+                <a href="#" class="submenu-parent" aria-expanded="@(IsCurrent("CargoCoordinator", "CargoView") || IsCurrent("CargoCoordinator", "IndexShipments") || IsCurrent("CargoCoordinator", "ShipmentTracking") ? "true" : "false")">
+                    <span class="submenu-content">
+                        <i class="bx bx-ship icon"></i>
                         <span class="nav-text">Shipments</span>
-                    </div>
-                    <i class='bx bx-chevron-down submenu-toggle'></i>
+                    </span>
+                    <i class="bx bx-chevron-down submenu-toggle"></i>
                 </a>
+
                 <ul class="submenu">
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="CargoView">
-                            <i class='bx bx-plus-circle icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="CargoView"
+                           class="@(IsCurrent("CargoCoordinator", "CargoView") ? "active" : "")">
+                            <i class="bx bx-plus-circle icon"></i>
                             <span>Cargo Coordinator</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="IndexShipments">
-                            <i class='bx bx-list-ul icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="IndexShipments"
+                           class="@(IsCurrent("CargoCoordinator", "IndexShipments") ? "active" : "")">
+                            <i class="bx bx-list-ul icon"></i>
                             <span>View All Shipments</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="ShipmentTracking">
-                            <i class='bx bx-map icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="ShipmentTracking"
+                           class="@(IsCurrent("CargoCoordinator", "ShipmentTracking") ? "active" : "")">
+                            <i class="bx bx-map icon"></i>
                             <span>Track Shipments</span>
                         </a>
                     </li>
                 </ul>
             </li>
 
-            <!-- Containers Section -->
-            <li class="nav-link has-submenu">
-                <a href="#" class="submenu-parent">
-                    <div class="submenu-content">
-                        <i class='bx bx-cube icon'></i>
+            <!-- Containers -->
+            <li class="nav-link has-submenu @(IsCurrent("CargoCoordinator", "ManageContainers") || IsCurrent("CargoCoordinator", "ContainerTracking") || IsCurrent("CargoCoordinator", "ContainerAllocation") ? "active" : "")">
+
+                <a href="#" class="submenu-parent" aria-expanded="@(IsCurrent("CargoCoordinator", "ManageContainers") || IsCurrent("CargoCoordinator", "ContainerTracking") || IsCurrent("CargoCoordinator", "ContainerAllocation") ? "true" : "false")">
+                    <span class="submenu-content">
+                        <i class="bx bx-cube icon"></i>
                         <span class="nav-text">Containers</span>
-                    </div>
-                    <i class='bx bx-chevron-down submenu-toggle'></i>
+                    </span>
+                    <i class="bx bx-chevron-down submenu-toggle"></i>
                 </a>
+
                 <ul class="submenu">
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="ManageContainers">
-                            <i class='bx bx-package icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="ManageContainers"
+                           class="@(IsCurrent("CargoCoordinator", "ManageContainers") ? "active" : "")">
+                            <i class="bx bx-package icon"></i>
                             <span>Manage Containers</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="ContainerTracking">
-                            <i class='bx bx-radar icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="ContainerTracking"
+                           class="@(IsCurrent("CargoCoordinator", "ContainerTracking") ? "active" : "")">
+                            <i class="bx bx-radar icon"></i>
                             <span>Container Tracking</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="ContainerAllocation">
-                            <i class='bx bx-check-circle icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="ContainerAllocation"
+                           class="@(IsCurrent("CargoCoordinator", "ContainerAllocation") ? "active" : "")">
+                            <i class="bx bx-check-circle icon"></i>
                             <span>Allocation Status</span>
                         </a>
                     </li>
                 </ul>
             </li>
 
-            <!-- Vessel Operations Section -->
-            <li class="nav-link has-submenu">
-                <a href="#" class="submenu-parent">
-                    <div class="submenu-content">
-                        <i class='bx bx-anchor icon'></i>
+            <!-- Vessel Operations -->
+            <li class="nav-link has-submenu @(IsCurrent("CargoCoordinator", "VesselSchedule") || IsCurrent("CargoCoordinator", "PortCalls") || IsCurrent("CargoCoordinator", "BerthAllocation") ? "active" : "")">
+
+                <a href="#" class="submenu-parent" aria-expanded="@(IsCurrent("CargoCoordinator", "VesselSchedule") || IsCurrent("CargoCoordinator", "PortCalls") || IsCurrent("CargoCoordinator", "BerthAllocation") ? "true" : "false")">
+                    <span class="submenu-content">
+                        <i class="bx bx-anchor icon"></i>
                         <span class="nav-text">Vessel Operations</span>
-                    </div>
-                    <i class='bx bx-chevron-down submenu-toggle'></i>
+                    </span>
+                    <i class="bx bx-chevron-down submenu-toggle"></i>
                 </a>
+
                 <ul class="submenu">
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="VesselSchedule">
-                            <i class='bx bx-calendar-event icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="VesselSchedule"
+                           class="@(IsCurrent("CargoCoordinator", "VesselSchedule") ? "active" : "")">
+                            <i class="bx bx-calendar-event icon"></i>
                             <span>Vessel Schedule</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="PortCalls">
-                            <i class='bx bx-building icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="PortCalls"
+                           class="@(IsCurrent("CargoCoordinator", "PortCalls") ? "active" : "")">
+                            <i class="bx bx-building icon"></i>
                             <span>Port Calls</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="BerthAllocation">
-                            <i class='bx bx-dock icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="BerthAllocation"
+                           class="@(IsCurrent("CargoCoordinator", "BerthAllocation") ? "active" : "")">
+                            <i class="bx bx-dock icon"></i>
                             <span>Berth Allocation</span>
                         </a>
                     </li>
                 </ul>
             </li>
 
-            <!-- Documentation Section -->
-            <li class="nav-link has-submenu">
-                <a href="#" class="submenu-parent">
-                    <div class="submenu-content">
-                        <i class='bx bx-file icon'></i>
+            <!-- Documentation -->
+            <li class="nav-link has-submenu @(IsCurrent("CargoCoordinator", "Manifest") || IsCurrent("CargoCoordinator", "CustomsDocs") || IsCurrent("CargoCoordinator", "BillOfLading") ? "active" : "")">
+
+                <a href="#" class="submenu-parent" aria-expanded="@(IsCurrent("CargoCoordinator", "Manifest") || IsCurrent("CargoCoordinator", "CustomsDocs") || IsCurrent("CargoCoordinator", "BillOfLading") ? "true" : "false")">
+                    <span class="submenu-content">
+                        <i class="bx bx-file icon"></i>
                         <span class="nav-text">Documentation</span>
-                    </div>
-                    <i class='bx bx-chevron-down submenu-toggle'></i>
+                    </span>
+                    <i class="bx bx-chevron-down submenu-toggle"></i>
                 </a>
+
                 <ul class="submenu">
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="Manifest">
-                            <i class='bx bx-spreadsheet icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="Manifest"
+                           class="@(IsCurrent("CargoCoordinator", "Manifest") ? "active" : "")">
+                            <i class="bx bx-spreadsheet icon"></i>
                             <span>Cargo Manifest</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="CustomsDocs">
-                            <i class='bx bx-id-card icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="CustomsDocs"
+                           class="@(IsCurrent("CargoCoordinator", "CustomsDocs") ? "active" : "")">
+                            <i class="bx bx-id-card icon"></i>
                             <span>Customs Documents</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="BillOfLading">
-                            <i class='bx bx-receipt icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="BillOfLading"
+                           class="@(IsCurrent("CargoCoordinator", "BillOfLading") ? "active" : "")">
+                            <i class="bx bx-receipt icon"></i>
                             <span>Bill of Lading</span>
                         </a>
                     </li>
                 </ul>
             </li>
 
-            <!-- Reports Section -->
-            <li class="nav-link has-submenu">
-                <a href="#" class="submenu-parent">
-                    <div class="submenu-content">
-                        <i class='bx bx-bar-chart-alt-2 icon'></i>
+            <!-- Reports -->
+            <li class="nav-link has-submenu @(IsCurrent("CargoCoordinator", "CargoSummary") || IsCurrent("CargoCoordinator", "PerformanceReport") || IsCurrent("CargoCoordinator", "DailyOperationsReport") ? "active" : "")">
+
+                <a href="#" class="submenu-parent" aria-expanded="@(IsCurrent("CargoCoordinator", "CargoSummary") || IsCurrent("CargoCoordinator", "PerformanceReport") || IsCurrent("CargoCoordinator", "DailyOperationsReport") ? "true" : "false")">
+                    <span class="submenu-content">
+                        <i class="bx bx-bar-chart-alt-2 icon"></i>
                         <span class="nav-text">Reports</span>
-                    </div>
-                    <i class='bx bx-chevron-down submenu-toggle'></i>
+                    </span>
+                    <i class="bx bx-chevron-down submenu-toggle"></i>
                 </a>
+
                 <ul class="submenu">
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="CargoSummary">
-                            <i class='bx bx-pie-chart-alt icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="CargoSummary"
+                           class="@(IsCurrent("CargoCoordinator", "CargoSummary") ? "active" : "")">
+                            <i class="bx bx-pie-chart-alt icon"></i>
                             <span>Cargo Summary</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="PerformanceReport">
-                            <i class='bx bx-trending-up icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="PerformanceReport"
+                           class="@(IsCurrent("CargoCoordinator", "PerformanceReport") ? "active" : "")">
+                            <i class="bx bx-trending-up icon"></i>
                             <span>Performance Report</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="CargoCoordinator" asp-action="DailyOperationsReport">
-                            <i class='bx bx-calendar icon'></i>
+                        <a asp-controller="CargoCoordinator"
+                           asp-action="DailyOperationsReport"
+                           class="@(IsCurrent("CargoCoordinator", "DailyOperationsReport") ? "active" : "")">
+                            <i class="bx bx-calendar icon"></i>
                             <span>Daily Operations</span>
                         </a>
                     </li>
@@ -277,102 +636,118 @@
 
             <!-- Settings -->
             <li class="nav-link">
-                <a asp-controller="CargoCoordinator" asp-action="Settings">
-                    <i class='bx bx-cog icon'></i>
+                <a asp-controller="CargoCoordinator"
+                   asp-action="Settings"
+                   class="@(IsCurrent("CargoCoordinator", "Settings") ? "active" : "")">
+                    <i class="bx bx-cog icon"></i>
                     <span class="nav-text">Settings</span>
                 </a>
             </li>
 
             <!-- Help & Support -->
             <li class="nav-link">
-                <a href="#">
-                    <i class='bx bx-help-circle icon'></i>
-                    <span class="nav-text">Help & Support</span>
+                <a asp-controller="Home" asp-action="Help"
+                   class="@(IsCurrent("Home", "Help") ? "active" : "")">
+                    <i class="bx bx-help-circle icon"></i>
+                    <span class="nav-text">Help &amp; Support</span>
                 </a>
             </li>
+
         </ul>
     </nav>
 
-    <!-- Main Content Area -->
-    <div class="main-content">
-        <div class="header-bar">
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class='bx bx-menu'></i>
+    <!-- Main content -->
+    <main class="main-content">
+
+        <header class="header-bar">
+            <button type="button"
+                    class="sidebar-toggle"
+                    id="sidebarToggle"
+                    aria-label="Toggle navigation"
+                    aria-controls="appSidebar"
+                    aria-expanded="false">
+                <i class="bx bx-menu"></i>
             </button>
+
             <div class="page-title">
-                <h1>@ViewData["Title"]</h1>
+                <h1>@(ViewData["Title"] ?? "Cargo Coordinator")</h1>
             </div>
-            <div class="user-menu">
-                @if (User.Identity.IsAuthenticated)
-                {
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="user-menu">
                     <div class="user-name">@fullName</div>
                     <div class="user-role">@roleName</div>
-                    <div class="user-avatar">@initials</div>
-                }
-            </div>
-        </div>
+                    <div class="user-avatar" title="@fullName">@initials</div>
+                </div>
+            }
+            else
+            {
+                <a asp-controller="Account"
+                   asp-action="Login"
+                   class="btn btn-outline-primary btn-sm">
+                    Sign in
+                </a>
+            }
+        </header>
 
         <div class="content-wrapper">
             @RenderBody()
         </div>
-    </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Sidebar toggle functionality
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('active');
-        });
+        document.addEventListener("DOMContentLoaded", function () {
+            const sidebar = document.getElementById("appSidebar");
+            const toggleButton = document.getElementById("sidebarToggle");
 
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            const sidebar = document.querySelector('.sidebar');
-            const toggleBtn = document.getElementById('sidebarToggle');
-            if (window.innerWidth <= 992 &&
-                !sidebar.contains(event.target) &&
-                !toggleBtn.contains(event.target) &&
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
+            if (!sidebar || !toggleButton) {
+                return;
             }
-        });
 
-        // Collapsible submenu functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const submenuParents = document.querySelectorAll('.submenu-parent');
+            toggleButton.addEventListener("click", function () {
+                sidebar.classList.toggle("active");
 
-            submenuParents.forEach(parent => {
-                parent.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const navLink = this.parentElement;
-                    navLink.classList.toggle('active');
+                const isOpen = sidebar.classList.contains("active");
+                toggleButton.setAttribute("aria-expanded", isOpen.toString());
+            });
+
+            document.addEventListener("click", function (event) {
+                if (window.innerWidth <= 992 &&
+                    sidebar.classList.contains("active") &&
+                    !sidebar.contains(event.target) &&
+                    !toggleButton.contains(event.target)) {
+
+                    sidebar.classList.remove("active");
+                    toggleButton.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            document.querySelectorAll(".submenu-parent").forEach(function (parent) {
+                parent.addEventListener("click", function (event) {
+                    event.preventDefault();
+
+                    const parentItem = parent.closest(".has-submenu");
+
+                    if (!parentItem) {
+                        return;
+                    }
+
+                    const isOpen = parentItem.classList.toggle("active");
+                    parent.setAttribute("aria-expanded", isOpen.toString());
                 });
             });
 
-            // Set active state based on current page
-            const currentLocation = window.location.href;
-            const menuLinks = document.querySelectorAll('.nav-link a, .submenu a');
-            menuLinks.forEach(link => {
-                if (link.href === currentLocation) {
-                    link.classList.add('active');
-
-                    // If it's a submenu item, open the parent submenu
-                    const submenuItem = link.closest('.submenu');
-                    if (submenuItem) {
-                        const parentNavLink = submenuItem.closest('.has-submenu');
-                        if (parentNavLink) {
-                            parentNavLink.classList.add('active');
-                        }
-                    }
+            window.addEventListener("resize", function () {
+                if (window.innerWidth > 992) {
+                    sidebar.classList.remove("active");
+                    toggleButton.setAttribute("aria-expanded", "false");
                 }
             });
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 992) {
-                document.querySelector('.sidebar').classList.remove('active');
-            }
         });
     </script>
 
